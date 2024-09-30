@@ -9,7 +9,7 @@
 # app.register_blueprint(product_routes, url_prefix='/api')
 # app.register_blueprint(order_routes, url_prefix='/api')
 
-
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from routes.authRoutes import auth_bp
@@ -22,7 +22,8 @@ from models import db, Game, Users, Review, ReviewInfo  # Import the db object
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:ArkhamknightN7?@localhost:5432/gamespective'  # Update with your database URI
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:ArkhamknightN7?@localhost:5432/gamespective'  # Update with your database URI
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # Update with your database URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)  # Initialize the db object with the app
 
