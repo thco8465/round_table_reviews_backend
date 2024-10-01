@@ -3,25 +3,23 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import jwt
 import os
-from models import Users  # Ensure your User model is correctly imported
+import traceback
 
 auth_bp = Blueprint('auth', __name__)
-db = SQLAlchemy()  # Initialize your database
-bcrypt = Bcrypt()  # Initialize Bcrypt for password hashing
+db = SQLAlchemy()
+bcrypt = Bcrypt()
 
-# Signup route
 @auth_bp.route('/signup', methods=['POST'])
 async def signup():
     try:
         data = request.get_json()
+        print('Sign-up request received with data:', data)  # Log the received data
+
         first_name = data.get('firstName')
         last_name = data.get('lastName')
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
-
-        # Log received data for debugging
-        print('Sign-up request received with data:', {'firstName': first_name, 'lastName': last_name, 'email': email})
 
         # Validate input
         if not all([first_name, last_name, username, email, password]):
@@ -42,7 +40,6 @@ async def signup():
 
         # Hash the password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        print('Password hashed successfully')
 
         # Create a new user
         new_user = Users(firstName=first_name, lastName=last_name, username=username, email=email, password=hashed_password)
@@ -52,7 +49,7 @@ async def signup():
 
         return jsonify(new_user), 201
     except Exception as e:
-        print('Error during signup:', e)
+        print('Error during signup:', traceback.format_exc())  # Log the traceback
         return jsonify({'error': 'Internal server error'}), 500
 
 # Signin route
