@@ -3,14 +3,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import jwt
 import os
-from models import Users  # Ensure your User model is correctly imported
+import traceback
+from models import db,Users  # Ensure your User model is correctly imported
 
 auth_bp = Blueprint('auth', __name__)
-db = SQLAlchemy()  # Initialize your database
+#db = SQLAlchemy()  # Initialize your database
 bcrypt = Bcrypt()  # Initialize Bcrypt for password hashing
 
 @auth_bp.route('/signup', methods=['POST'])
-async def signup():
+def signup():
     try:
         data = request.get_json()
         print('Sign-up request received with data:', data)  # Log the received data
@@ -54,7 +55,7 @@ async def signup():
 
 # Signin route
 @auth_bp.route('/signin', methods=['POST'])
-async def signin():
+def signin():
     try:
         data = request.get_json()
         email = data.get('email')

@@ -231,7 +231,7 @@ def display_reviews():
     
 # Get all accepted friends for a user
 @user_bp.route('/friends', methods=['GET'])
-async def get_friends():
+def get_friends():
     user_id = request.args.get('id', type=int)  # Convert to number
     print('user id:', user_id)
 
@@ -319,7 +319,7 @@ def get_user_by_id(user_id):
 
 # Get user reviews by user ID
 @user_bp.route('/<int:user_id>/reviews', methods=['GET'])
-async def get_user_reviews(user_id):
+def get_user_reviews(user_id):
     conn = None
     cursor = None
     try:
@@ -364,7 +364,7 @@ async def get_user_reviews(user_id):
 
 # Search for users by username
 @user_bp.route('/search-user', methods=['GET'])
-async def search_user():
+def search_user():
     username = request.args.get('username')
     if not username:
         return jsonify({'error': 'Username parameter is required'}), 400  # Validate input
@@ -398,7 +398,7 @@ async def search_user():
 
 # Add a new friend (send friend request)
 @user_bp.route('/add-friend', methods=['POST'])
-async def add_friend():
+def add_friend():
     data = request.json
     user_id = data.get('userId')
     friend_id = data.get('friendId')
@@ -432,7 +432,7 @@ async def add_friend():
 
 # Check friendship status
 @user_bp.route('/friend-status', methods=['GET'])
-async def friend_status():
+def friend_status():
     user_id = request.args.get('userId', type=int)  # Convert to integer
     friend_id = request.args.get('friendId', type=int)  # Convert to integer
 
@@ -467,7 +467,7 @@ async def friend_status():
 
 # Get sent friend requests
 @user_bp.route('/friends/sent', methods=['GET'])
-async def sent_friend_requests():
+def sent_friend_requests():
     user_id = request.args.get('id', type=int)  # Convert to integer
 
     if user_id is None:
@@ -511,7 +511,7 @@ async def sent_friend_requests():
 
 # Get received friend requests
 @user_bp.route('/friends/received', methods=['GET'])
-async def received_friend_requests():
+def received_friend_requests():
     user_id = request.args.get('id', type=int)  # Convert to integer
 
     if user_id is None:
@@ -555,7 +555,7 @@ async def received_friend_requests():
 
 # Accept a friend request
 @user_bp.route('/friends/accept', methods=['POST'])
-async def accept_friend_request():
+def accept_friend_request():
     data = request.json
     user_id = data.get('userId')
     friend_id = data.get('friendId')
@@ -598,7 +598,7 @@ async def accept_friend_request():
 
 #Decline a friend request
 @user_bp.route('/friends/decline', methods=['POST'])
-async def decline_friend_request():
+def decline_friend_request():
     data = request.json
     user_id = data.get('userId')
     friend_id = data.get('friendId')
