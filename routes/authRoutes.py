@@ -3,11 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import jwt
 import os
-import traceback
+from models import Users  # Ensure your User model is correctly imported
 
 auth_bp = Blueprint('auth', __name__)
-db = SQLAlchemy()
-bcrypt = Bcrypt()
+db = SQLAlchemy()  # Initialize your database
+bcrypt = Bcrypt()  # Initialize Bcrypt for password hashing
 
 @auth_bp.route('/signup', methods=['POST'])
 async def signup():
