@@ -18,7 +18,7 @@ from routes.review import review_bp
 from routes.twitch_api import twitch_bp
 from routes.user import user_bp
 from models import db, Game, Users, Review, ReviewInfo  # Import the db object
-
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 
@@ -29,6 +29,7 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # Update with your database URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)  # Initialize the db object with the app
+migrate = Migrate(app, db)  # Initialize Flask-Migrate
 
 with app.app_context():
     db.create_all()  # Create the tables
