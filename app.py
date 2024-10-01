@@ -22,6 +22,9 @@ from models import db, Game, Users, Review, ReviewInfo  # Import the db object
 
 app = Flask(__name__)
 
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API routes
+
+
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:ArkhamknightN7?@localhost:5432/gamespective'  # Update with your database URI
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # Update with your database URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -29,8 +32,6 @@ db.init_app(app)  # Initialize the db object with the app
 
 with app.app_context():
     db.create_all()  # Create the tables
-
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API routes
 
 app.register_blueprint(auth_bp, url_prefix='/api/authRoutes')
 app.register_blueprint(game_bp, url_prefix='/api/games')
