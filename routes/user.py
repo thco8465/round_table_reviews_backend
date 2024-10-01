@@ -1,9 +1,14 @@
 from flask import Blueprint, request, jsonify
 from functools import wraps
+import logging
 import jwt
 import os
 from db import get_connection, release_connection  # Import connection functions
 user_bp = Blueprint('user', __name__)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Middleware to check if the user is authenticated
 def authenticate(f):
@@ -13,16 +18,21 @@ def authenticate(f):
         if token:
             token = token.split(' ')[1]  # Extract token from "Bearer <token>"
         else:
+            logger.warning('Authorization header is missing.')
             return jsonify({'error': 'Unauthorized'}), 401
 
         try:
             decoded = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=["HS256"])
             request.user = {'id': decoded['id']}  # Set user ID to request object
+            logger.info(f'User authenticated successfully: {decoded["id"]}')
             return f(*args, **kwargs)
         except jwt.ExpiredSignatureError:
+            logger.warning('Token has expired.')
             return jsonify({'error': 'Unauthorized'}), 401
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            logger.error(f'Invalid token: {str(e)}')
             return jsonify({'error': 'Unauthorized'}), 401
+
     return decorated
 
 # Get user information
@@ -59,12 +69,13 @@ def get_user_info():
                         'level': user[5]
                     })
                 else:
+                    logging.warning(f'User not found for ID: {user_id}')
                     return jsonify({'error': 'User not found'}), 404
         finally:
             # Always release the connection back to the pool
             release_connection(conn)
     except Exception as error:
-        print('Error fetching user data:', error)
+        logging.error(f'Error fetching user data: {error}', exc_info=True)
         return jsonify({'error': 'Internal Server Error'}), 500
     
 @user_bp.route('/reviewCount', methods=['POST'])
