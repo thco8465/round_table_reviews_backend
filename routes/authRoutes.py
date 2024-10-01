@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+import logging
 import jwt
 import os
 import traceback
@@ -10,11 +11,15 @@ auth_bp = Blueprint('auth', __name__)
 #db = SQLAlchemy()  # Initialize your database
 bcrypt = Bcrypt()  # Initialize Bcrypt for password hashing
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
     try:
         data = request.get_json()
-        print('Sign-up request received with data:', data)  # Log the received data
+        logger.info('Sign-up request received with data: %s', data)  # Log the received data
 
         first_name = data.get('firstName')
         last_name = data.get('lastName')
@@ -24,19 +29,19 @@ def signup():
 
         # Validate input
         if not all([first_name, last_name, username, email, password]):
-            print('Validation failed: Missing required fields')
+            logger.warning('Validation failed: Missing required fields')
             return jsonify({'error': 'All fields are required'}), 400
 
         # Check if the email is already in use
         existing_email_user = Users.query.filter_by(email=email).first()
         if existing_email_user:
-            print('Email already in use:', email)
+            logger.warning('Email already in use: %s', email)
             return jsonify({'error': 'Email is already in use'}), 400
 
         # Check if the username is already in use
         existing_username_user = Users.query.filter_by(username=username).first()
         if existing_username_user:
-            print('Username already in use:', username)
+            logger.warning('Username already in use: %s', username)
             return jsonify({'error': 'Username is already in use'}), 400
 
         # Hash the password
@@ -46,11 +51,11 @@ def signup():
         new_user = Users(firstName=first_name, lastName=last_name, username=username, email=email, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
-        print('New user created:', new_user)
+        logger.info('New user created: %s', new_user)
 
-        return jsonify(new_user), 201
+        return jsonify(new_user.to_dict()), 201
     except Exception as e:
-        print('Error during signup:', traceback.format_exc())  # Log the traceback
+        logger.error('Error during signup: %s', traceback.format_exc())  # Log the traceback
         return jsonify({'error': 'Internal server error'}), 500
 
 # Signin route
