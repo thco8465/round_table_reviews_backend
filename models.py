@@ -11,6 +11,16 @@ class Users(db.Model):
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(128))
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'firstName': self.firstName,
+            'lastName': self.lastName,
+            'username': self.username,
+            'email': self.email,
+            # Do not include the password in the response for security reasons
+        }
+
 class Game(db.Model):
     __tablename__ = 'games'  # Name of the table
 
