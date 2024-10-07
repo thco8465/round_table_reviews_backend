@@ -150,7 +150,13 @@ def get_in_depth_review(review_id):
 
         # Fetch the review information based on review_id
         cursor.execute(
-            'SELECT * FROM "review_info" WHERE review_id = %s',
+            """
+            SELECT r.*, games.cover, reviews.game_name
+            FROM review_info r
+            JOIN reviews ON r.review_id = reviews.id
+            JOIN games ON reviews.game_name = games.name 
+            WHERE r.review_id = %s
+            """,
             (review_id,)
         )
         review_info = cursor.fetchone()  # Get the first result
