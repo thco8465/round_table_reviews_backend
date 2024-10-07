@@ -19,18 +19,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the db object with the app
 db.init_app(app)  
 
-def apply_migrations():
-    with app.app_context():
-        try:
-            # Run this to apply any pending migrations
-            upgrade()  
-            print("Migrations applied successfully.")
-        except Exception as e:
-            print(f"Error applying migrations: {e}")
-
-# Apply migrations at startup
-apply_migrations()
-
 # Register your blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/authRoutes')
 app.register_blueprint(game_bp, url_prefix='/api/games')
