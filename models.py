@@ -5,7 +5,7 @@ db = SQLAlchemy()
 
 class Users(db.Model):
     __tablename__ = 'Users'  # Use the exact table name
-
+    
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Auto-incrementing primary key
     firstName = db.Column(db.String(255), nullable=False)  # First name with a maximum length of 255
     lastName = db.Column(db.String(255), nullable=False)  # Last name with a maximum length of 255

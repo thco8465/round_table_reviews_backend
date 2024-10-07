@@ -7,7 +7,6 @@ from routes.review import review_bp
 from routes.twitch_api import twitch_bp
 from routes.user import user_bp
 from models import db, Game, Users, Review, ReviewInfo  # Import the db object
-from flask_migrate import Migrate, upgrade
 
 app = Flask(__name__)
 
@@ -19,9 +18,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the db object with the app
 db.init_app(app)  
-
-# Initialize Flask-Migrate
-migrate = Migrate(app, db)  
 
 def apply_migrations():
     with app.app_context():
