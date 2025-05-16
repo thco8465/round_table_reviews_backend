@@ -208,9 +208,8 @@ def display_reviews():
             # Fetch reviews for the authenticated user
             with conn.cursor() as cursor:
                 reviews_query = """
-                    SELECT reviews.id, reviews.rating, reviews.review, reviews.date, reviews.game_name, games.cover
+                    SELECT reviews.id, reviews.rating, reviews.review, reviews.date, reviews.game_name, reviews.cover_url
                     FROM reviews
-                    JOIN games ON similarity(reviews.game_name, games.name) > 0.8
                     WHERE reviews.user_id = %s
                     ORDER BY reviews.date DESC
                 """
@@ -338,9 +337,8 @@ def get_user_reviews(user_id):
         cursor = conn.cursor()
 
         query = """
-            SELECT reviews.id, reviews.rating, reviews.review, reviews.date, reviews.game_name, games.cover
+            SELECT reviews.id, reviews.rating, reviews.review, reviews.date, reviews.game_name, reviews.cover_url
             FROM reviews
-            JOIN games ON similarity(reviews.game_name, games.name) > 0.8
             WHERE reviews.user_id = %s
             ORDER BY reviews.date DESC
         """

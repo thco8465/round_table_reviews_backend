@@ -13,6 +13,7 @@ def add_review():
     data = request.json
     game_id = int(data.get('gameId'))
     game_name = data.get('game_name')
+    cover_url = data.get('cover')
     user_id = data.get('userId')
     review = data.get('review')
     time_spent = data.get('timeSpent')
@@ -20,7 +21,7 @@ def add_review():
     date = data.get('date')
 
     # Validate required fields and their types
-    if not all([isinstance(game_id, int), isinstance(game_name, str), isinstance(user_id, int), 
+    if not all([isinstance(game_id, int), isinstance(game_name, str), isinstance(cover_url, str), isinstance(user_id, int), 
                 isinstance(review, str), isinstance(time_spent, int), isinstance(rating, (int, float)), 
                 isinstance(date, str)]):
         print('Invalid input data:', data)
@@ -50,12 +51,12 @@ def add_review():
         
         # SQL query to insert the review
         insert_query = sql.SQL("""
-            INSERT INTO reviews (game_id, game_name, user_id, review, time_spent, rating, date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;
+            INSERT INTO reviews (game_id, game_name, cover_url,user_id, review, time_spent, rating, date)
+            VALUES (%s, %s, %s,%s, %s, %s, %s, %s) RETURNING id;
         """)
 
         # Execute the insert query
-        cursor.execute(insert_query, (game_id_int, game_name, user_id, review, time_spent_int, rating, parsed_date))
+        cursor.execute(insert_query, (game_id_int, game_name, cover_url,user_id, review, time_spent_int, rating, parsed_date))
         new_review_id = cursor.fetchone()[0]  # Get the ID of the newly inserted review
 
         # Commit the transaction
@@ -66,6 +67,7 @@ def add_review():
             'id': new_review_id,
             'game_id': game_id_int,
             'game_name': game_name,
+            'cover_url': cover_url,
             'user_id': user_id,
             'review': review,
             'time_spent': time_spent_int,
@@ -151,10 +153,9 @@ def get_in_depth_review(review_id):
         # Fetch the review information based on review_id
         cursor.execute(
             """
-            SELECT r.*, games.cover, reviews.game_name
+            SELECT r.*, reviews.cover_url, reviews.game_name
             FROM review_info r
             JOIN reviews ON r.review_id = reviews.id
-            JOIN games ON reviews.game_name = games.name 
             WHERE r.review_id = %s
             """,
             (review_id,)
@@ -186,10 +187,9 @@ def get_reviews_by_user(username):
         cursor = conn.cursor()
         
         query = sql.SQL("""
-            SELECT r.id, r.game_name, r.review, r.time_spent, r.rating, r.date, g.cover
+            SELECT r.id, r.game_name, r.review, r.time_spent, r.rating, r.date, r.cover_url
             FROM reviews r
             JOIN "Users" u ON r.user_id = u.id
-            JOIN games g ON r.game_name = g.name
             WHERE u.username = %s
         """)
         
@@ -231,14 +231,13 @@ def get_reviews_by_game(game):
         cursor = conn.cursor()
         
         query = sql.SQL("""
-            SELECT r.id, r.game_name, r.review, r.rating, r.date, r.time_spent, u.username, g.cover
-            FROM reviews r
-            JOIN games g ON r.game_name = g.name
-            JOIN "Users" u on r.user_id = u.id
-            WHERE r.game_name = %s
-        """)
+        SELECT r.id, r.game_name, r.review, r.rating, r.date, r.time_spent, u.username, r.cover_url
+        FROM reviews r
+        JOIN "Users" u ON r.user_id = u.id
+        WHERE r.game_name ILIKE %s
+    """)
         
-        cursor.execute(query, (game,))
+        cursor.execute(query, (f"%{game}%",))
         rows = cursor.fetchall()
         
         # Optionally, convert rows to a more usable format
@@ -283,10 +282,10 @@ def get_recent_reviews():
             reviews.review,
             reviews.date,
             reviews.time_spent,
-            games.cover,
-            "Users".username
+            reviews.cover_url,
+            "Users".username,
+            reviews.game_name
             FROM reviews
-            JOIN games ON reviews.game_name = games.name
             JOIN "Users" ON reviews.user_id = "Users".id
             ORDER BY reviews.date DESC
             LIMIT 10;
@@ -304,7 +303,8 @@ def get_recent_reviews():
                 'date': row[3],
                 'time_spent': row[4],
                 'cover': row[5],
-                'username': row[6]
+                'username': row[6],
+                'game_name': row[7]
             })
 
         cursor.close()
