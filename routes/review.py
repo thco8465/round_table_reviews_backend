@@ -316,3 +316,185 @@ def get_recent_reviews():
         # Release the connection back to the pool
         if connection:
             release_connection(connection)
+# POST route to add or update a vote on a review
+@review_bp.route('/review/vote', methods=['POST'])
+def vote_review():
+    data = request.json
+    review_id = data.get('reviewId')
+    user_id = data.get('userId')
+    vote = data.get('vote')  # Expected to be 1 (helpful) or -1 (not helpful)
+
+    # Validate input
+    if vote not in [1, -1]:
+        print("Invalid vote value:", vote)
+        return jsonify({'error': 'Vote must be 1 (helpful) or -1 (not helpful)'}), 400
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Use INSERT ... ON CONFLICT to insert or update the vote
+        vote_query = """
+            INSERT INTO review_votes (review_id, user_id, vote)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (review_id, user_id)
+            DO UPDATE SET vote = EXCLUDED.vote, created_at = now();
+        """
+        cursor.execute(vote_query, (review_id, user_id, vote))
+        conn.commit()
+
+        # After recording the vote, update the reviews table with aggregated counts.
+        update_query = """
+            UPDATE reviews
+            SET helpful_votes = (
+                  SELECT COUNT(*) FROM review_votes 
+                  WHERE review_id = %s AND vote = 1
+                ),
+                not_helpful_votes = (
+                  SELECT COUNT(*) FROM review_votes 
+                  WHERE review_id = %s AND vote = -1
+                )
+            WHERE id = %s;
+        """
+        cursor.execute(update_query, (review_id, review_id, review_id))
+        conn.commit()
+
+        return jsonify({'message': 'Vote recorded successfully'}), 201
+
+    except Exception as e:
+        print('Error recording vote:', e)
+        if conn:
+            conn.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            release_connection(conn)
+
+
+
+# POST route to add a comment to a review
+@review_bp.route('/review/comment', methods=['POST'])
+def post_comment():
+    data = request.json
+    review_id = data.get('reviewId')
+    user_id = data.get('userId')
+    comment_text = data.get('comment')
+
+    # Validate required fields
+    if not all([review_id, user_id, comment_text]) or not isinstance(comment_text, str):
+        print("Invalid comment data:", data)
+        return jsonify({'error': 'Invalid input data'}), 400
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        comment_query = """
+            INSERT INTO review_comments (review_id, user_id, comment)
+            VALUES (%s, %s, %s) RETURNING id, created_at;
+        """
+        cursor.execute(comment_query, (review_id, user_id, comment_text))
+        new_comment = cursor.fetchone()
+        conn.commit()
+
+        response = {
+            'id': new_comment[0],
+            'reviewId': review_id,
+            'userId': user_id,
+            'comment': comment_text,
+            'createdAt': new_comment[1].isoformat()
+        }
+        return jsonify(response), 201
+
+    except Exception as e:
+        print('Error inserting comment:', e)
+        conn.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            release_connection(conn)
+
+
+# GET route to fetch all comments for a specific review
+@review_bp.route('/review/<int:review_id>/comments', methods=['GET'])
+def get_comments(review_id):
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection() 
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT rc.id, rc.comment, rc.created_at, u.username
+            FROM review_comments rc
+            LEFT JOIN "Users" u ON rc.user_id = u.id
+            WHERE rc.review_id = %s
+            ORDER BY rc.created_at DESC;
+        """
+        cursor.execute(query, (review_id,))
+        rows = cursor.fetchall()
+        
+        comments = []
+        for row in rows:
+            comments.append({
+                'id': row[0],
+                'comment': row[1],
+                'createdAt': row[2].isoformat(),
+                'username': row[3]  # Assuming the Users table has a username column
+            })
+
+        return jsonify(comments), 200
+
+    except Exception as e:
+        print('Error fetching comments:', e)
+        return jsonify({'error': 'Internal server error'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            release_connection(conn)
+@review_bp.route('/review/vote/<int:review_id>', methods=['GET'])
+def get_review_votes(review_id):
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Select the aggregated vote counts directly from the reviews table
+        query = """
+            SELECT helpful_votes, not_helpful_votes
+            FROM reviews
+            WHERE id = %s;
+        """
+        cursor.execute(query, (review_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            return jsonify({'error': 'Review not found'}), 404
+
+        helpful, not_helpful = row
+        
+        return jsonify({
+            'reviewId': review_id,
+            'helpfulVotes': helpful,
+            'notHelpfulVotes': not_helpful
+        }), 200
+
+    except Exception as e:
+        print('Error fetching votes:', e)
+        return jsonify({'error': 'Internal server error'}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            release_connection(conn)

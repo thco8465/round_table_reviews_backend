@@ -308,10 +308,10 @@ def get_user_by_id(user_id):
         # Convert the user data to a dictionary for JSON response
         user_dict = {
             'id': user_data[0],  # Adjust indices based on your schema
-            'username': user_data[-1],  # Adjust as needed
-            'reviewCount': user_data[-4],  # Adjust as needed
-            'exp': user_data[-3],
-            'level': user_data[-2],
+            'username': user_data[3],  # Adjust as needed
+            'reviewCount': user_data[-3],  # Adjust as needed
+            'exp': user_data[-2],
+            'level': user_data[-1],
             # Add other fields as needed
         }
 
